@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pitch Deck Builder — Consulting Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#d8d8d8;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* ── Header ── */
+.app-header{background:#0f0f1e;color:#fff;padding:0 18px;height:54px;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:3px solid #A100FF;}
+.logo{font-weight:900;font-size:15px;letter-spacing:-0.5px;color:#fff;display:flex;align-items:center;gap:6px;}
+.logo span{color:#A100FF;}
+.logo-dot{width:8px;height:8px;background:#A100FF;border-radius:50%;display:inline-block;}
+.hspacer{flex:1;}
+.hcontrols{display:flex;align-items:center;gap:8px;}
+.tpl-label{color:rgba(255,255,255,.5);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+select.tpl-sel{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 10px;border-radius:5px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;}
+select.tpl-sel option{background:#1a1a2e;color:#fff;}
+.tpl-info{display:none;background:rgba(161,0,255,.2);border:1px solid rgba(161,0,255,.5);color:rgba(255,255,255,.85);padding:4px 10px;border-radius:4px;font-size:11px;align-items:center;gap:6px;}
+.tpl-info.show{display:flex;}
+.tpl-info .rm{cursor:pointer;font-weight:800;color:#A100FF;font-size:14px;line-height:1;}
+.btn{padding:6px 14px;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:opacity .15s;}
+.btn:hover{opacity:.85;}
+.btn-up{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);}
+.btn-pptx{background:#A100FF;color:#fff;}
+.btn-pdf{background:#e53935;color:#fff;}
+
+/* ── Body ── */
+.app-body{display:flex;flex:1;overflow:hidden;}
+
+/* ── Sidebar ── */
+.sidebar{width:370px;flex-shrink:0;background:#fff;border-right:1px solid #ddd;display:flex;overflow:hidden;}
+.slide-tabs{width:110px;background:#f2f2f2;border-right:1px solid #e0e0e0;overflow-y:auto;flex-shrink:0;}
+.stab{padding:9px 6px;font-size:10px;font-weight:600;color:#777;cursor:pointer;border-bottom:1px solid #e5e5e5;text-align:center;line-height:1.3;transition:all .15s;}
+.stab:hover{background:#e8e8e8;color:#333;}
+.stab.active{background:#fff;color:#A100FF;font-weight:800;border-right:3px solid #A100FF;}
+.stab-n{display:block;font-size:16px;font-weight:900;margin-bottom:1px;}
+.form-panels{flex:1;overflow-y:auto;padding:14px;}
+.form-panel{display:none;}
+.form-panel.active{display:block;}
+.fsec{font-size:11px;font-weight:800;color:#A100FF;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-bottom:5px;border-bottom:2px solid #f0eaff;}
+.fsec:first-child{margin-top:0;}
+.fg{margin-bottom:8px;}
+.fg label{display:block;font-size:10px;font-weight:700;color:#666;margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px;}
+.fg input,.fg textarea,.fg select{width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:11px;font-family:'Inter',sans-serif;color:#333;background:#fafafa;transition:border-color .2s;}
+.fg input:focus,.fg textarea:focus{outline:none;border-color:#A100FF;background:#fff;}
+.fg textarea{resize:vertical;min-height:52px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.sub{background:#f8f4ff;border-left:3px solid #A100FF;padding:9px 9px 5px;margin-bottom:8px;border-radius:0 4px 4px 0;}
+.sub-t{font-size:10px;font-weight:800;color:#444;margin-bottom:6px;text-transform:uppercase;}
+
+/* ── Preview ── */
+.preview-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#c8c8c8;padding:16px;overflow:hidden;gap:14px;}
+.slide-container{background:#fff;box-shadow:0 6px 40px rgba(0,0,0,.35);position:relative;overflow:hidden;flex-shrink:0;}
+.slide-wrapper{width:960px;height:540px;transform-origin:top left;}
+.slide{width:960px;height:540px;position:relative;overflow:hidden;font-family:'Inter',sans-serif;}
+.nav-bar{display:flex;align-items:center;gap:14px;background:rgba(0,0,0,.45);padding:7px 18px;border-radius:28px;flex-shrink:0;}
+.nbtn{background:rgba(255,255,255,.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.nbtn:hover{background:rgba(255,255,255,.4);}
+.nbtn:disabled{opacity:.25;cursor:default;}
+.slide-ctr{color:#fff;font-size:13px;font-weight:700;min-width:50px;text-align:center;}
+.slide-nm{color:rgba(255,255,255,.7);font-size:11px;min-width:140px;text-align:center;}
+
+/* ── Print ── */
+@media print{
+  .app-header,.sidebar,.nav-bar,.preview-area>.nav-bar{display:none!important;}
+  body,html{height:auto;overflow:visible;}
+  .app-body{display:block;}
+  .preview-area{background:#fff;padding:0;display:block;}
+  .slide-container{box-shadow:none;width:100%;height:auto;}
+  .slide-wrapper{transform:none!important;width:100%;height:auto;}
+  #print-all-slides .slide{width:100vw;height:100vh;page-break-after:always;display:block!important;}
+  #slide-preview{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="app-header">
+  <div class="logo"><span class="logo-dot"></span>Pitch<span>Deck</span> Builder</div>
+  <div class="hspacer"></div>
+  <div class="hcontrols">
+    <div class="tpl-info" id="tplInfo">
+      <span id="tplInfoName">Custom Template</span>
+      <span class="rm" onclick="removeUploadedTemplate()" title="Remove">✕</span>
+    </div>
+    <span class="tpl-label">Theme</span>
+    <select class="tpl-sel" id="themeSelect" onchange="switchTheme(this.value)">
+      <option value="accenture">Accenture</option>
+      <option value="deloitte">Deloitte</option>
+      <option value="mckinsey">McKinsey</option>
+      <option value="corporate">Corporate</option>
+    </select>
+    <button class="btn btn-up" onclick="document.getElementById('tplUpload').click()">⬆ Upload Template</button>
+    <button class="btn btn-pptx" onclick="exportPPTX()">⬇ Export PPTX</button>
+    <button class="btn btn-pdf" onclick="printPDF()">🖨 Print PDF</button>
+  </div>
+</div>
+
+<input type="file" id="tplUpload" accept=".pptx" style="display:none" onchange="handleTemplateUpload(event)">
+
+<!-- Body -->
+<div class="app-body">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="slide-tabs" id="slideTabs">
+      <div class="stab active" data-i="0" onclick="switchTab(0)"><span class="stab-n">1</span>Cover</div>
+      <div class="stab" data-i="1" onclick="switchTab(1)"><span class="stab-n">2</span>Exec Sum</div>
+      <div class="stab" data-i="2" onclick="switchTab(2)"><span class="stab-n">3</span>Challenge</div>
+      <div class="stab" data-i="3" onclick="switchTab(3)"><span class="stab-n">4</span>Approach</div>
+      <div class="stab" data-i="4" onclick="switchTab(4)"><span class="stab-n">5</span>Solution</div>
+      <div class="stab" data-i="5" onclick="switchTab(5)"><span class="stab-n">6</span>ROI</div>
+      <div class="stab" data-i="6" onclick="switchTab(6)"><span class="stab-n">7</span>Why Us</div>
+      <div class="stab" data-i="7" onclick="switchTab(7)"><span class="stab-n">8</span>Case Study</div>
+      <div class="stab" data-i="8" onclick="switchTab(8)"><span class="stab-n">9</span>Timeline</div>
+      <div class="stab" data-i="9" onclick="switchTab(9)"><span class="stab-n">10</span>Next Steps</div>
+    </div>
+
+    <div class="form-panels" id="formPanels">
+
+      <!-- Slide 1: Cover -->
+      <div class="form-panel active" data-slide="0">
+        <div class="fsec">Cover Slide</div>
+        <div class="fg"><label>Client Name</label><input id="f_cover_client" value="GlobalTech Industries"></div>
+        <div class="fg"><label>Engagement Title</label><input id="f_cover_title" value="Digital Sales Transformation"></div>
+        <div class="fg"><label>Subtitle</label><input id="f_cover_sub" value="Accelerating Revenue Growth Through Intelligent Automation"></div>
+        <div class="frow">
+          <div class="fg"><label>Date</label><input id="f_cover_date" value="May 2026"></div>
+          <div class="fg"><label>Prepared By</label><input id="f_cover_by" value="Sales Excellence Practice"></div>
+        </div>
+        <div class="fg"><label>Confidentiality Line</label><input id="f_cover_conf" value="Confidential — For Client Discussion Only"></div>
+      </div>
+
+      <!-- Slide 2: Exec Summary -->
+      <div class="form-panel" data-slide="1">
+        <div class="fsec">Executive Summary</div>
+        <div class="sub">
+          <div class="sub-t">Situation</div>
+          <div class="fg"><textarea id="f_es_sit" rows="3">GlobalTech's sales organisation is operating across 12 markets with fragmented tools, manual reporting and no unified customer view — resulting in missed pipeline visibility and slow deal cycles.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Complication</div>
+          <div class="fg"><textarea id="f_es_comp" rows="3">Increasing competitive pressure and rising customer expectations demand faster, more personalised engagement — yet current systems cannot support the speed or insight required at scale.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Resolution</div>
+          <div class="fg"><textarea id="f_es_res" rows="3">A unified Digital Sales Platform with AI-driven insights, automated workflows and real-time analytics will reduce sales cycle time by 35% and increase win rates across all segments.</textarea></div>
+        </div>
+        <div class="fsec">Key Metrics</div>
+        <div class="frow3">
+          <div class="fg"><label>Metric 1 Value</label><input id="f_es_m1v" value="35%"></div>
+          <div class="fg"><label>Metric 1 Label</label><input id="f_es_m1l" value="Faster Sales Cycles"></div>
+          <div class="fg"></div>
+        </div>
+        <div class="frow3">
+          <div class="fg"><label>Metric 2 Value</label><input id="f_es_m2v" value="$42M"></div>
+          <div class="fg"><label>Metric 2 Label</label><input id="f_es_m2l" value="Revenue Uplift (Yr 3)"></div>
+          <div class="fg"></div>
+        </div>
+        <div class="frow3">
+          <div class="fg"><label>Metric 3 Value</label><input id="f_es_m3v" value="18 mo"></div>
+          <div class="fg"><label>Metric 3 Label</label><input id="f_es_m3l" value="Payback Period"></div>
+          <div class="fg"></div>
+        </div>
+      </div>
+
+      <!-- Slide 3: Challenge -->
+      <div class="form-panel" data-slide="2">
+        <div class="fsec">The Challenge</div>
+        <div class="fg"><label>Challenge Headline</label><input id="f_ch_head" value="Fragmented Sales Operations Are Costing You Growth"></div>
+        <div class="sub">
+          <div class="sub-t">Pain Point 1</div>
+          <div class="fg"><label>Title</label><input id="f_ch_p1t" value="No Single Source of Truth"></div>
+          <div class="fg"><label>Description</label><textarea id="f_ch_p1d" rows="2">Sales data sits across 7 disconnected systems, making it impossible to get accurate pipeline visibility or forecast reliably.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Pain Point 2</div>
+          <div class="fg"><label>Title</label><input id="f_ch_p2t" value="Manual, Time-Consuming Processes"></div>
+          <div class="fg"><label>Description</label><textarea id="f_ch_p2d" rows="2">Reps spend 40% of their time on admin tasks — updating CRM fields, generating reports, chasing approvals — instead of selling.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Pain Point 3</div>
+          <div class="fg"><label>Title</label><input id="f_ch_p3t" value="Inconsistent Customer Experience"></div>
+          <div class="fg"><label>Description</label><textarea id="f_ch_p3d" rows="2">Without a unified customer view, interactions are fragmented and personalisation is impossible — leading to churn and lost upsell opportunities.</textarea></div>
+        </div>
+        <div class="fg"><label>Business Impact Statement</label><textarea id="f_ch_impact" rows="2">These challenges are estimated to cost GlobalTech $18M annually in lost revenue and wasted operational capacity.</textarea></div>
+      </div>
+
+      <!-- Slide 4: Approach -->
+      <div class="form-panel" data-slide="3">
+        <div class="fsec">Our Approach</div>
+        <div class="fg"><label>Approach Title</label><input id="f_ap_title" value="A Proven Four-Phase Delivery Model"></div>
+        <div class="sub">
+          <div class="sub-t">Phase 1</div>
+          <div class="frow"><div class="fg"><label>Name</label><input id="f_ap_p1n" value="Discover"></div><div class="fg"><label>Duration</label><input id="f_ap_p1d" value="Weeks 1–4"></div></div>
+          <div class="fg"><textarea id="f_ap_p1desc" rows="2">Stakeholder interviews, current-state assessment, data audit and opportunity sizing across all sales markets.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Phase 2</div>
+          <div class="frow"><div class="fg"><label>Name</label><input id="f_ap_p2n" value="Design"></div><div class="fg"><label>Duration</label><input id="f_ap_p2d" value="Weeks 5–10"></div></div>
+          <div class="fg"><textarea id="f_ap_p2desc" rows="2">Future-state architecture, platform selection, process redesign, KPI framework and change management planning.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Phase 3</div>
+          <div class="frow"><div class="fg"><label>Name</label><input id="f_ap_p3n" value="Deliver"></div><div class="fg"><label>Duration</label><input id="f_ap_p3d" value="Weeks 11–26"></div></div>
+          <div class="fg"><textarea id="f_ap_p3desc" rows="2">Agile build and integration, data migration, user training and phased go-live across priority markets.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Phase 4</div>
+          <div class="frow"><div class="fg"><label>Name</label><input id="f_ap_p4n" value="Scale"></div><div class="fg"><label>Duration</label><input id="f_ap_p4d" value="Weeks 27–52"></div></div>
+          <div class="fg"><textarea id="f_ap_p4desc" rows="2">Full rollout, continuous optimisation, AI model tuning and embedding a culture of data-driven selling.</textarea></div>
+        </div>
+      </div>
+
+      <!-- Slide 5: Solution -->
+      <div class="form-panel" data-slide="4">
+        <div class="fsec">Proposed Solution</div>
+        <div class="fg"><label>Solution Name</label><input id="f_sol_name" value="SalesIQ — Unified Digital Sales Platform"></div>
+        <div class="fg"><label>Tagline</label><input id="f_sol_tag" value="One Platform. Every Insight. Seamless Selling."></div>
+        <div class="sub">
+          <div class="sub-t">Pillar 1</div>
+          <div class="fg"><label>Name</label><input id="f_sol_p1n" value="Intelligent Pipeline Management"></div>
+          <div class="fg"><label>Bullet 1</label><input id="f_sol_p1b1" value="Real-time pipeline health scoring"></div>
+          <div class="fg"><label>Bullet 2</label><input id="f_sol_p1b2" value="AI-driven deal risk alerts"></div>
+          <div class="fg"><label>Bullet 3</label><input id="f_sol_p1b3" value="Automated forecast roll-up"></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Pillar 2</div>
+          <div class="fg"><label>Name</label><input id="f_sol_p2n" value="Automated Workflows & Productivity"></div>
+          <div class="fg"><label>Bullet 1</label><input id="f_sol_p2b1" value="No-code automation builder"></div>
+          <div class="fg"><label>Bullet 2</label><input id="f_sol_p2b2" value="Smart meeting summaries & next-step capture"></div>
+          <div class="fg"><label>Bullet 3</label><input id="f_sol_p2b3" value="Approval workflows with SLA tracking"></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Pillar 3</div>
+          <div class="fg"><label>Name</label><input id="f_sol_p3n" value="Customer Intelligence & Personalisation"></div>
+          <div class="fg"><label>Bullet 1</label><input id="f_sol_p3b1" value="360° unified customer profile"></div>
+          <div class="fg"><label>Bullet 2</label><input id="f_sol_p3b2" value="Predictive propensity-to-buy scoring"></div>
+          <div class="fg"><label>Bullet 3</label><input id="f_sol_p3b3" value="Dynamic content personalisation at scale"></div>
+        </div>
+      </div>
+
+      <!-- Slide 6: ROI -->
+      <div class="form-panel" data-slide="5">
+        <div class="fsec">Business Case</div>
+        <div class="frow">
+          <div class="fg"><label>Currency Symbol</label><input id="f_roi_cur" value="$"></div>
+          <div class="fg"><label>Total Investment</label><input id="f_roi_inv" value="8.2M"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label>Year 1 Benefit</label><input id="f_roi_y1" value="4.1M"></div>
+          <div class="fg"><label>Year 2 Benefit</label><input id="f_roi_y2" value="14.8M"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label>Year 3 Benefit</label><input id="f_roi_y3" value="42.3M"></div>
+          <div class="fg"><label>Payback Period</label><input id="f_roi_pb" value="18 months"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label>3-Year NPV</label><input id="f_roi_npv" value="$36.1M"></div>
+          <div class="fg"><label>ROI %</label><input id="f_roi_pct" value="340%"></div>
+        </div>
+        <div class="fg"><label>ROI Note</label><textarea id="f_roi_note" rows="2">Benefits include revenue uplift from improved win rates, productivity savings from automation, and reduced customer churn.</textarea></div>
+      </div>
+
+      <!-- Slide 7: Why Us -->
+      <div class="form-panel" data-slide="6">
+        <div class="fsec">Why Us</div>
+        <div class="fg"><label>Your Company Name</label><input id="f_why_co" value="Accenture"></div>
+        <div class="sub">
+          <div class="sub-t">Differentiator 1</div>
+          <div class="fg"><label>Title</label><input id="f_why_d1t" value="Unrivalled Sales Transformation Experience"></div>
+          <div class="fg"><label>Description</label><textarea id="f_why_d1d" rows="2">Over 200 sales transformation programmes delivered globally, with deep sector expertise in technology, financial services and manufacturing.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Differentiator 2</div>
+          <div class="fg"><label>Title</label><input id="f_why_d2t" value="Proprietary AI &amp; Technology Assets"></div>
+          <div class="fg"><label>Description</label><textarea id="f_why_d2d" rows="2">Our SalesAI accelerator and pre-built integration library reduce implementation risk and cut time-to-value by 40% versus build-from-scratch approaches.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Differentiator 3</div>
+          <div class="fg"><label>Title</label><input id="f_why_d3t" value="End-to-End Accountability"></div>
+          <div class="fg"><label>Description</label><textarea id="f_why_d3d" rows="2">We own the outcome — from strategy through to adoption. Our outcome-based commercial model means our incentives are fully aligned with your success.</textarea></div>
+        </div>
+        <div class="fsec">Credentials</div>
+        <div class="frow3">
+          <div class="fg"><label>Years Experience</label><input id="f_why_yr" value="30+"></div>
+          <div class="fg"><label>Clients Served</label><input id="f_why_cl" value="2,400+"></div>
+          <div class="fg"><label>Projects Delivered</label><input id="f_why_pr" value="500+"></div>
+        </div>
+      </div>
+
+      <!-- Slide 8: Case Study -->
+      <div class="form-panel" data-slide="7">
+        <div class="fsec">Case Study</div>
+        <div class="frow">
+          <div class="fg"><label>Client Industry</label><input id="f_cs_ind" value="Enterprise Software"></div>
+          <div class="fg"><label>Client Tag</label><input id="f_cs_tag" value="Fortune 500 Technology Company"></div>
+        </div>
+        <div class="fg"><label>Challenge</label><textarea id="f_cs_ch" rows="3">A global enterprise software company with $4B in annual revenue struggled with a 14-month average enterprise deal cycle, 23% win rate and no visibility into deal health across 8 regional sales teams.</textarea></div>
+        <div class="fg"><label>Our Approach</label><textarea id="f_cs_ap" rows="3">We deployed our SalesIQ platform across all regions, integrating with their existing ERP and consolidating 9 data sources into a unified pipeline. Custom AI models were trained on 5 years of historical deal data.</textarea></div>
+        <div class="sub">
+          <div class="sub-t">Result 1</div>
+          <div class="frow"><div class="fg"><label>Metric</label><input id="f_cs_r1m" value="41%"></div><div class="fg"><label>Description</label><input id="f_cs_r1d" value="Reduction in average deal cycle"></div></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Result 2</div>
+          <div class="frow"><div class="fg"><label>Metric</label><input id="f_cs_r2m" value="$67M"></div><div class="fg"><label>Description</label><input id="f_cs_r2d" value="Incremental revenue in Year 1"></div></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Result 3</div>
+          <div class="frow"><div class="fg"><label>Metric</label><input id="f_cs_r3m" value="31%"></div><div class="fg"><label>Description</label><input id="f_cs_r3d" value="Improvement in win rate"></div></div>
+        </div>
+      </div>
+
+      <!-- Slide 9: Timeline -->
+      <div class="form-panel" data-slide="8">
+        <div class="fsec">Investment &amp; Timeline</div>
+        <div class="sub">
+          <div class="sub-t">Phase 1</div>
+          <div class="frow3">
+            <div class="fg"><label>Name</label><input id="f_tl_p1n" value="Discovery &amp; Design"></div>
+            <div class="fg"><label>Duration</label><input id="f_tl_p1d" value="10 weeks"></div>
+            <div class="fg"><label>Investment</label><input id="f_tl_p1p" value="$1.8M"></div>
+          </div>
+          <div class="fg"><label>Scope</label><textarea id="f_tl_p1s" rows="2">Current state assessment, future state design, platform architecture, business case validation.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Phase 2</div>
+          <div class="frow3">
+            <div class="fg"><label>Name</label><input id="f_tl_p2n" value="Build &amp; Integrate"></div>
+            <div class="fg"><label>Duration</label><input id="f_tl_p2d" value="16 weeks"></div>
+            <div class="fg"><label>Investment</label><input id="f_tl_p2p" value="$4.2M"></div>
+          </div>
+          <div class="fg"><label>Scope</label><textarea id="f_tl_p2s" rows="2">Platform configuration, data migration, system integrations, UAT, training and change management.</textarea></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Phase 3</div>
+          <div class="frow3">
+            <div class="fg"><label>Name</label><input id="f_tl_p3n" value="Scale &amp; Optimise"></div>
+            <div class="fg"><label>Duration</label><input id="f_tl_p3d" value="26 weeks"></div>
+            <div class="fg"><label>Investment</label><input id="f_tl_p3p" value="$2.2M"></div>
+          </div>
+          <div class="fg"><label>Scope</label><textarea id="f_tl_p3s" rows="2">Global rollout, AI model refinement, performance management and continuous improvement programme.</textarea></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label>Total Investment</label><input id="f_tl_tot" value="$8.2M"></div>
+          <div class="fg"><label>Total Duration</label><input id="f_tl_dur" value="52 weeks"></div>
+        </div>
+      </div>
+
+      <!-- Slide 10: Next Steps -->
+      <div class="form-panel" data-slide="9">
+        <div class="fsec">Next Steps</div>
+        <div class="fg"><label>Call to Action</label><input id="f_ns_cta" value="Approve Discovery Phase to Begin Immediately"></div>
+        <div class="sub">
+          <div class="sub-t">Action 1</div>
+          <div class="frow"><div class="fg"><label>Action</label><input id="f_ns_a1a" value="Executive alignment workshop"></div><div class="fg"><label>Owner</label><input id="f_ns_a1o" value="CRO + Accenture Lead"></div></div>
+          <div class="fg"><label>Target Date</label><input id="f_ns_a1d" value="2 Jun 2026"></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Action 2</div>
+          <div class="frow"><div class="fg"><label>Action</label><input id="f_ns_a2a" value="SOW review &amp; legal sign-off"></div><div class="fg"><label>Owner</label><input id="f_ns_a2o" value="Procurement + Legal"></div></div>
+          <div class="fg"><label>Target Date</label><input id="f_ns_a2d" value="9 Jun 2026"></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Action 3</div>
+          <div class="frow"><div class="fg"><label>Action</label><input id="f_ns_a3a" value="Project kick-off &amp; team onboarding"></div><div class="fg"><label>Owner</label><input id="f_ns_a3o" value="Programme Director"></div></div>
+          <div class="fg"><label>Target Date</label><input id="f_ns_a3d" value="16 Jun 2026"></div>
+        </div>
+        <div class="sub">
+          <div class="sub-t">Action 4</div>
+          <div class="frow"><div class="fg"><label>Action</label><input id="f_ns_a4a" value="Discovery sprint 1 begins"></div><div class="fg"><label>Owner</label><input id="f_ns_a4o" value="Delivery Team"></div></div>
+          <div class="fg"><label>Target Date</label><input id="f_ns_a4d" value="23 Jun 2026"></div>
+        </div>
+        <div class="fg"><label>Contact Name</label><input id="f_ns_con" value="Sarah Mitchell, Managing Director"></div>
+        <div class="fg"><label>Contact Details</label><input id="f_ns_email" value="sarah.mitchell@accenture.com  |  +44 20 7844 1000"></div>
+      </div>
+
+    </div><!-- /form-panels -->
+  </div><!-- /sidebar -->
+
+  <!-- Preview -->
+  <div class="preview-area" id="previewArea">
+    <div class="slide-container" id="slideContainer">
+      <div class="slide-wrapper" id="slideWrapper">
+        <div id="slide-preview"></div>
+      </div>
+    </div>
+    <div class="nav-bar">
+      <button class="nbtn" id="btnPrev" onclick="navigate(-1)">&#8592;</button>
+      <span class="slide-nm" id="slideNameEl">Cover</span>
+      <span class="slide-ctr" id="slideCtrEl">1 / 10</span>
+      <button class="nbtn" id="btnNext" onclick="navigate(1)">&#8594;</button>
+    </div>
+  </div>
+
+</div><!-- /app-body -->
+
+<!-- Hidden print container -->
+<div id="print-all-slides" style="display:none;"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  THEMES
+// ══════════════════════════════════════════
+const THEMES = {
+  accenture: {
+    name:'Accenture', primary:'#A100FF', primaryH:'A100FF',
+    dark:'#1a1a2e', darkH:'1A1A2E', accent:'#00D4FF', accentH:'00D4FF',
+    secondary:'#6600BB', secondaryH:'6600BB', light:'#f8f0ff',
+    textDark:'#1a1a2e', textGray:'#555', cardBg:'#fff',
+    gradStart:'#A100FF', gradEnd:'#1a1a2e'
+  },
+  deloitte: {
+    name:'Deloitte', primary:'#86BC25', primaryH:'86BC25',
+    dark:'#012169', darkH:'012169', accent:'#00A3E0', accentH:'00A3E0',
+    secondary:'#00793D', secondaryH:'00793D', light:'#f0f7e8',
+    textDark:'#012169', textGray:'#444', cardBg:'#fff',
+    gradStart:'#012169', gradEnd:'#014F96'
+  },
+  mckinsey: {
+    name:'McKinsey', primary:'#002F6C', primaryH:'002F6C',
+    dark:'#001A3C', darkH:'001A3C', accent:'#0073CE', accentH:'0073CE',
+    secondary:'#1D4E8F', secondaryH:'1D4E8F', light:'#e8f0f8',
+    textDark:'#002F6C', textGray:'#444', cardBg:'#fff',
+    gradStart:'#002F6C', gradEnd:'#001A3C'
+  },
+  corporate: {
+    name:'Corporate', primary:'#1B365D', primaryH:'1B365D',
+    dark:'#0A1628', darkH:'0A1628', accent:'#F5A623', accentH:'F5A623',
+    secondary:'#2B7BB9', secondaryH:'2B7BB9', light:'#eaf2ff',
+    textDark:'#1B365D', textGray:'#444', cardBg:'#fff',
+    gradStart:'#1B365D', gradEnd:'#0A1628'
+  }
+};
+
+const SLIDE_NAMES = ['Cover','Executive Summary','The Challenge','Our Approach','Proposed Solution','Business Case / ROI','Why Us','Case Study','Investment & Timeline','Next Steps'];
+
+let currentTheme = THEMES.accenture;
+let currentSlide = 0;
+let uploadedTheme = null;
+
+// ══════════════════════════════════════════
+//  DATA HELPERS
+// ══════════════════════════════════════════
+function g(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+
+function getData(){
+  return {
+    cover:{ client:g('f_cover_client'), title:g('f_cover_title'), sub:g('f_cover_sub'), date:g('f_cover_date'), by:g('f_cover_by'), conf:g('f_cover_conf') },
+    es:{ sit:g('f_es_sit'), comp:g('f_es_comp'), res:g('f_es_res'), m1v:g('f_es_m1v'), m1l:g('f_es_m1l'), m2v:g('f_es_m2v'), m2l:g('f_es_m2l'), m3v:g('f_es_m3v'), m3l:g('f_es_m3l') },
+    ch:{ head:g('f_ch_head'), p1t:g('f_ch_p1t'), p1d:g('f_ch_p1d'), p2t:g('f_ch_p2t'), p2d:g('f_ch_p2d'), p3t:g('f_ch_p3t'), p3d:g('f_ch_p3d'), impact:g('f_ch_impact') },
+    ap:{ title:g('f_ap_title'), p1n:g('f_ap_p1n'), p1d:g('f_ap_p1d'), p1desc:g('f_ap_p1desc'), p2n:g('f_ap_p2n'), p2d:g('f_ap_p2d'), p2desc:g('f_ap_p2desc'), p3n:g('f_ap_p3n'), p3d:g('f_ap_p3d'), p3desc:g('f_ap_p3desc'), p4n:g('f_ap_p4n'), p4d:g('f_ap_p4d'), p4desc:g('f_ap_p4desc') },
+    sol:{ name:g('f_sol_name'), tag:g('f_sol_tag'), p1n:g('f_sol_p1n'), p1b1:g('f_sol_p1b1'), p1b2:g('f_sol_p1b2'), p1b3:g('f_sol_p1b3'), p2n:g('f_sol_p2n'), p2b1:g('f_sol_p2b1'), p2b2:g('f_sol_p2b2'), p2b3:g('f_sol_p2b3'), p3n:g('f_sol_p3n'), p3b1:g('f_sol_p3b1'), p3b2:g('f_sol_p3b2'), p3b3:g('f_sol_p3b3') },
+    roi:{ cur:g('f_roi_cur'), inv:g('f_roi_inv'), y1:g('f_roi_y1'), y2:g('f_roi_y2'), y3:g('f_roi_y3'), pb:g('f_roi_pb'), npv:g('f_roi_npv'), pct:g('f_roi_pct'), note:g('f_roi_note') },
+    why:{ co:g('f_why_co'), d1t:g('f_why_d1t'), d1d:g('f_why_d1d'), d2t:g('f_why_d2t'), d2d:g('f_why_d2d'), d3t:g('f_why_d3t'), d3d:g('f_why_d3d'), yr:g('f_why_yr'), cl:g('f_why_cl'), pr:g('f_why_pr') },
+    cs:{ ind:g('f_cs_ind'), tag:g('f_cs_tag'), ch:g('f_cs_ch'), ap:g('f_cs_ap'), r1m:g('f_cs_r1m'), r1d:g('f_cs_r1d'), r2m:g('f_cs_r2m'), r2d:g('f_cs_r2d'), r3m:g('f_cs_r3m'), r3d:g('f_cs_r3d') },
+    tl:{ p1n:g('f_tl_p1n'), p1d:g('f_tl_p1d'), p1p:g('f_tl_p1p'), p1s:g('f_tl_p1s'), p2n:g('f_tl_p2n'), p2d:g('f_tl_p2d'), p2p:g('f_tl_p2p'), p2s:g('f_tl_p2s'), p3n:g('f_tl_p3n'), p3d:g('f_tl_p3d'), p3p:g('f_tl_p3p'), p3s:g('f_tl_p3s'), tot:g('f_tl_tot'), dur:g('f_tl_dur') },
+    ns:{ cta:g('f_ns_cta'), a1a:g('f_ns_a1a'), a1o:g('f_ns_a1o'), a1d:g('f_ns_a1d'), a2a:g('f_ns_a2a'), a2o:g('f_ns_a2o'), a2d:g('f_ns_a2d'), a3a:g('f_ns_a3a'), a3o:g('f_ns_a3o'), a3d:g('f_ns_a3d'), a4a:g('f_ns_a4a'), a4o:g('f_ns_a4o'), a4d:g('f_ns_a4d'), con:g('f_ns_con'), email:g('f_ns_email') }
+  };
+}
+
+// ══════════════════════════════════════════
+//  SLIDE HTML RENDERERS
+// ══════════════════════════════════════════
+function slideHTML(index, data, t){
+  switch(index){
+    case 0: return slide_cover(data.cover, t);
+    case 1: return slide_execsum(data.es, t);
+    case 2: return slide_challenge(data.ch, t);
+    case 3: return slide_approach(data.ap, t);
+    case 4: return slide_solution(data.sol, t);
+    case 5: return slide_roi(data.roi, t);
+    case 6: return slide_whyus(data.why, t);
+    case 7: return slide_casestudy(data.cs, t);
+    case 8: return slide_timeline(data.tl, t);
+    case 9: return slide_nextsteps(data.ns, t);
+    default: return '';
+  }
+}
+
+function e(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Slide 1: Cover ──
+function slide_cover(d, t){
+  return `<div class="slide" style="background:linear-gradient(135deg,${t.gradStart} 0%,${t.gradEnd} 100%);font-family:'Inter',sans-serif;">
+  <div style="position:absolute;top:0;left:0;right:0;height:5px;background:${t.accent};"></div>
+  <div style="position:absolute;top:0;right:0;width:320px;height:320px;background:rgba(255,255,255,0.04);border-radius:0 0 0 320px;"></div>
+  <div style="position:absolute;top:0;right:60px;width:180px;height:180px;background:rgba(255,255,255,0.03);border-radius:0 0 0 180px;"></div>
+  <div style="position:absolute;left:64px;top:72px;right:64px;">
+    <div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:600;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;">${e(d.client)}</div>
+    <div style="color:#fff;font-size:44px;font-weight:900;line-height:1.1;margin-bottom:18px;letter-spacing:-1.5px;max-width:700px;">${e(d.title)}</div>
+    <div style="width:56px;height:4px;background:${t.accent};margin-bottom:18px;border-radius:2px;"></div>
+    <div style="color:rgba(255,255,255,0.8);font-size:15px;font-weight:400;max-width:580px;line-height:1.5;">${e(d.sub)}</div>
+  </div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:64px;background:rgba(0,0,0,0.35);display:flex;align-items:center;padding:0 64px;justify-content:space-between;">
+    <div style="color:rgba(255,255,255,0.9);font-size:12px;font-weight:600;">${e(d.by)}</div>
+    <div style="color:rgba(255,255,255,0.5);font-size:12px;">${e(d.date)}</div>
+    <div style="color:rgba(255,255,255,0.4);font-size:10px;">${e(d.conf)}</div>
+  </div>
+</div>`;
+}
+
+// ── Slide 2: Executive Summary ──
+function slide_execsum(d, t){
+  const cols = [
+    {label:'Situation', text:d.sit, border:t.primary},
+    {label:'Complication', text:d.comp, border:'#e53935'},
+    {label:'Resolution', text:d.res, border:t.accent}
+  ];
+  const metrics = [
+    {v:d.m1v, l:d.m1l},{v:d.m2v, l:d.m2l},{v:d.m3v, l:d.m3l}
+  ];
+  return `<div class="slide" style="background:#fff;font-family:'Inter',sans-serif;">
+  <div style="background:${t.dark};height:64px;display:flex;align-items:center;padding:0 40px;">
+    <span style="color:#fff;font-size:18px;font-weight:800;letter-spacing:-0.3px;">Executive Summary</span>
+    <div style="flex:1;"></div>
+    <span style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:1px;text-transform:uppercase;">Situation · Complication · Resolution</span>
+  </div>
+  <div style="display:flex;padding:20px 32px 0;gap:16px;">
+    ${cols.map(c=>`<div style="flex:1;border-top:4px solid ${c.border};padding-top:12px;">
+      <div style="font-size:11px;font-weight:800;color:${c.border};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">${c.label}</div>
+      <div style="font-size:12px;color:#444;line-height:1.6;">${e(c.text)}</div>
+    </div>`).join('')}
+  </div>
+  <div style="display:flex;padding:14px 32px 0;gap:16px;">
+    ${metrics.map(m=>`<div style="flex:1;background:${t.light};border-radius:8px;padding:14px 16px;text-align:center;">
+      <div style="font-size:32px;font-weight:900;color:${t.primary};letter-spacing:-1px;">${e(m.v)}</div>
+      <div style="font-size:11px;color:#666;font-weight:600;margin-top:4px;">${e(m.l)}</div>
+    </div>`).join('')}
+  </div>
+</div>`;
+}
+
+// ── Slide 3: Challenge ──
+function slide_challenge(d, t){
+  const pains = [
+    {t:d.p1t, d:d.p1d},{t:d.p2t, d:d.p2d},{t:d.p3t, d:d.p3d}
+  ];
+  return `<div class="slide" style="background:#f7f7f9;font-family:'Inter',sans-serif;">
+  <div style="background:${t.dark};height:80px;display:flex;flex-direction:column;justify-content:center;padding:0 40px;">
+    <span style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;">The Challenge</span>
+    <span style="color:#fff;font-size:19px;font-weight:800;margin-top:3px;">${e(d.head)}</span>
+  </div>
+  <div style="display:flex;padding:20px 32px;gap:14px;">
+    ${pains.map((p,i)=>`<div style="flex:1;background:#fff;border-radius:8px;padding:18px 16px 18px 20px;border-left:4px solid ${t.primary};box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <div style="width:28px;height:28px;background:${t.light};border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:900;color:${t.primary};">${i+1}</span>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:${t.dark};margin-bottom:6px;line-height:1.3;">${e(p.t)}</div>
+      <div style="font-size:11px;color:#666;line-height:1.6;">${e(p.d)}</div>
+    </div>`).join('')}
+  </div>
+  <div style="margin:0 32px;background:#fff0f0;border-left:4px solid #e53935;border-radius:0 6px 6px 0;padding:12px 18px;display:flex;align-items:center;gap:12px;">
+    <span style="font-size:18px;">⚠</span>
+    <span style="font-size:12px;color:#c62828;font-weight:600;">${e(d.impact)}</span>
+  </div>
+</div>`;
+}
+
+// ── Slide 4: Approach ──
+function slide_approach(d, t){
+  const phases = [
+    {n:d.p1n, dur:d.p1d, desc:d.p1desc},
+    {n:d.p2n, dur:d.p2d, desc:d.p2desc},
+    {n:d.p3n, dur:d.p3d, desc:d.p3desc},
+    {n:d.p4n, dur:d.p4d, desc:d.p4desc}
+  ];
+  return `<div class="slide" style="background:#fff;font-family:'Inter',sans-serif;">
+  <div style="background:${t.dark};height:64px;display:flex;align-items:center;padding:0 40px;">
+    <span style="color:#fff;font-size:18px;font-weight:800;">${e(d.title)}</span>
+  </div>
+  <div style="padding:32px 40px 0;">
+    <div style="display:flex;align-items:flex-start;position:relative;">
+      <div style="position:absolute;top:20px;left:20px;right:20px;height:3px;background:${t.light};z-index:0;"></div>
+      ${phases.map((p,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;z-index:1;">
+        <div style="width:42px;height:42px;border-radius:50%;background:${t.primary};display:flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow:0 2px 12px ${t.primary}44;">
+          <span style="color:#fff;font-size:16px;font-weight:900;">${i+1}</span>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:${t.dark};margin-bottom:3px;text-align:center;">${e(p.n)}</div>
+        <div style="font-size:10px;color:${t.primary};font-weight:700;margin-bottom:8px;text-align:center;background:${t.light};padding:2px 8px;border-radius:10px;">${e(p.dur)}</div>
+        <div style="font-size:10px;color:#666;text-align:center;line-height:1.5;max-width:180px;">${e(p.desc)}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+</div>`;
+}
+
+// ── Slide 5: Solution ──
+function slide_solution(d, t){
+  const pillars = [
+    {n:d.p1n, b:[d.p1b1,d.p1b2,d.p1b3]},
+    {n:d.p2n, b:[d.p2b1,d.p2b2,d.p2b3]},
+    {n:d.p3n, b:[d.p3b1,d.p3b2,d.p3b3]}
+  ];
+  return `<div class="slide" style="background:#fff;font-family:'Inter',sans-serif;">
+  <div style="background:${t.primary};height:80px;display:flex;flex-direction:column;justify-content:center;padding:0 40px;">
+    <span style="color:rgba(255,255,255,0.7);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;">Proposed Solution</span>
+    <div style="display:flex;align-items:baseline;gap:20px;margin-top:2px;">
+      <span style="color:#fff;font-size:19px;font-weight:900;">${e(d.name)}</span>
+      <span style="color:rgba(255,255,255,0.65);font-size:12px;font-style:italic;">${e(d.tag)}</span>
+    </div>
+  </div>
+  <div style="display:flex;padding:22px 32px;gap:16px;">
+    ${pillars.map((p,i)=>`<div style="flex:1;border:1px solid #eee;border-radius:10px;padding:18px 16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+      <div style="width:32px;height:32px;background:${t.primary};border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+        <span style="color:#fff;font-size:14px;font-weight:900;">${i+1}</span>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:${t.dark};margin-bottom:12px;line-height:1.3;">${e(p.n)}</div>
+      <div style="border-top:1px solid #f0f0f0;padding-top:10px;">
+        ${p.b.map(b=>`<div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;">
+          <span style="color:${t.primary};font-size:14px;line-height:1.2;flex-shrink:0;">›</span>
+          <span style="font-size:11px;color:#555;line-height:1.5;">${e(b)}</span>
+        </div>`).join('')}
+      </div>
+    </div>`).join('')}
+  </div>
+</div>`;
+}
+
+// ── Slide 6: ROI ──
+function slide_roi(d, t){
+  const cur = d.cur;
+  return `<div class="slide" style="background:#fff;font-family:'Inter',sans-serif;">
+  <div style="background:${t.dark};height:64px;display:flex;align-items:center;padding:0 40px;">
+    <span style="color:#fff;font-size:18px;font-weight:800;">Business Case &amp; Return on Investment</span>
+  </div>
+  <div style="display:flex;padding:16px 32px 0;gap:12px;">
+    ${[
+      {v:`${cur}${d.inv}`, l:'Total Investment', col:'#e53935'},
+      {v:`${cur}${d.y1}`, l:'Year 1 Benefits', col:t.accent},
+      {v:`${cur}${d.y3}`, l:'Year 3 Benefits', col:t.primary},
+      {v:d.npv, l:'3-Year NPV', col:'#2e7d32'},
+      {v:d.pct, l:'ROI', col:'#f57c00'}
+    ].map(m=>`<div style="flex:1;background:${t.light};border-radius:8px;padding:12px 10px;text-align:center;border-top:3px solid ${m.col};">
+      <div style="font-size:22px;font-weight:900;color:${m.col};letter-spacing:-0.5px;">${e(m.v)}</div>
+      <div style="font-size:10px;color:#666;font-weight:600;margin-top:3px;">${m.l}</div>
+    </div>`).join('')}
+  </div>
+  <div style="margin:12px 32px 0;">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead>
+        <tr style="background:${t.dark};">
+          <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.85);font-weight:700;">Item</th>
+          <th style="padding:8px 12px;text-align:right;color:rgba(255,255,255,0.85);font-weight:700;">Year 1</th>
+          <th style="padding:8px 12px;text-align:right;color:rgba(255,255,255,0.85);font-weight:700;">Year 2</th>
+          <th style="padding:8px 12px;text-align:right;color:rgba(255,255,255,0.85);font-weight:700;">Year 3</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:#fff;">
+          <td style="padding:7px 12px;color:#333;font-weight:600;">Total Investment</td>
+          <td style="padding:7px 12px;text-align:right;color:#e53935;">(${cur}${d.inv})</td>
+          <td style="padding:7px 12px;text-align:right;color:#aaa;">—</td>
+          <td style="padding:7px 12px;text-align:right;color:#aaa;">—</td>
+        </tr>
+        <tr style="background:#fafafa;">
+          <td style="padding:7px 12px;color:#333;font-weight:600;">Cumulative Benefits</td>
+          <td style="padding:7px 12px;text-align:right;color:#2e7d32;">${cur}${d.y1}</td>
+          <td style="padding:7px 12px;text-align:right;color:#2e7d32;">${cur}${d.y2}</td>
+          <td style="padding:7px 12px;text-align:right;color:#2e7d32;">${cur}${d.y3}</td>
+        </tr>
+        <tr style="background:${t.light};font-weight:800;">
+          <td style="padding:8px 12px;color:${t.dark};border-top:2px solid ${t.primary};">Net Position</td>
+          <td style="padding:8px 12px;text-align:right;color:${t.primary};border-top:2px solid ${t.primary};">Payback: ${e(d.pb)}</td>
+          <td style="padding:8px 12px;text-align:right;color:${t.primary};border-top:2px solid ${t.primary};">NPV: ${e(d.npv)}</td>
+          <td style="padding:8px 12px;text-align:right;color:${t.primary};border-top:2px solid ${t.primary};">ROI: ${e(d.pct)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin:8px 32px 0;font-size:10px;color:#888;font-style:italic;">* ${e(d.note)}</div>
+</div>`;
+}
+
+// ── Slide 7: Why Us ──
+function slide_whyus(d, t){
+  const diffs = [
+    {t:d.d1t, d:d.d1d},{t:d.d2t, d:d.d2d},{t:d.d3t, d:d.d3d}
+  ];
+  const creds = [{v:d.yr,l:'Years Experience'},{v:d.cl,l:'Clients Served'},{v:d.pr,l:'Programmes Delivered'}];
+  return `<div class="slide" style="background:#fff;font-family:'Inter',sans-serif;">
+  <div style="background:${t.dark};height:64px;display:flex;align-items:center;padding:0 40px;">
+    <span style="color:#fff;font-size:18px;font-weight:800;">Why ${e(d.co)}</span>
+  </div>
+  <div style="display:flex;padding:20px 32px 16px;gap:16px;">
+    ${diffs.map((dd,i)=>`<div style="flex:1;background:#fff;border-radius:10px;padding:20px;border:1px solid #eee;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+      <div style="width:40px;height:40px;background:${t.primary};border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+        <span style="color:#fff;font-size:18px;">✓</span>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:${t.dark};margin-bottom:8px;line-height:1.3;">${e(dd.t)}</div>
+      <div style="font-size:11px;color:#666;line-height:1.6;">${e(dd.d)}</div>
+    </div>`).join('')}
+  </div>
+  <div style="background:${t.dark};margin:0 32px;border-radius:8px;padding:14px 24px;display:flex;justify-content:space-around;">
+    ${creds.map(c=>`<div style="text-align:center;">
+      <div style="font-size:28px;font-weight:900;color:${t.accent};">${e(c.v)}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.6);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">${c.l}</div>
+    </div>`).join('')}
+  </div>
+</div>`;
+}
+
+// ── Slide 8: Case Study ──
+function slide_casestudy(d, t){
+  const results = [{m:d.r1m,l:d.r1d},{m:d.r2m,l:d.r2d},{m:d.r3m,l:d.r3d}];
+  return `<div class="slide" style="background:#fff;font-family:'Inter',sans-serif;">
+  <div style="background:${t.dark};height:64px;display:flex;align-items:center;padding:0 40px;gap:14px;">
+    <span style="color:#fff;font-size:18px;font-weight:800;">Client Success Story</span>
+    <span style="background:${t.primary};color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.5px;">${e(d.tag)}</span>
+  </div>
+  <div style="display:flex;height:calc(540px - 64px);">
+    <div style="flex:1.2;padding:20px 20px 20px 32px;border-right:1px solid #eee;overflow:hidden;">
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;font-weight:800;color:${t.primary};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">The Challenge</div>
+        <div style="font-size:11px;color:#444;line-height:1.6;">${e(d.ch)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:800;color:${t.accent};text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Our Approach</div>
+        <div style="font-size:11px;color:#444;line-height:1.6;">${e(d.ap)}</div>
+      </div>
+    </div>
+    <div style="flex:1;padding:20px 32px 20px 20px;display:flex;flex-direction:column;gap:10px;justify-content:center;">
+      <div style="font-size:10px;font-weight:800;color:#2e7d32;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Results Delivered</div>
+      ${results.map(r=>`<div style="background:${t.light};border-left:4px solid ${t.primary};border-radius:0 8px 8px 0;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:28px;font-weight:900;color:${t.primary};letter-spacing:-1px;min-width:64px;">${e(r.m)}</span>
+        <span style="font-size:11px;color:#555;font-weight:600;line-height:1.4;">${e(r.l)}</span>
+      </div>`).join('')}
+    </div>
+  </div>
+</div>`;
+}
+
+// ── Slide 9: Timeline ──
+function slide_timeline(d, t){
+  const phases = [
+    {n:d.p1n, dur:d.p1d, price:d.p1p, scope:d.p1s, col:t.accent},
+    {n:d.p2n, dur:d.p2d, price:d.p2p, scope:d.p2s, col:t.primary},
+    {n:d.p3n, dur:d.p3d, price:d.p3p, scope:d.p3s, col:t.secondary}
+  ];
+  const widths = [20, 32, 48];
+  return `<div class="slide" style="background:#fff;font-family:'Inter',sans-serif;">
+  <div style="background:${t.dark};height:64px;display:flex;align-items:center;padding:0 40px;">
+    <span style="color:#fff;font-size:18px;font-weight:800;">Investment &amp; Delivery Timeline</span>
+  </div>
+  <div style="display:flex;margin:18px 32px;height:14px;border-radius:7px;overflow:hidden;">
+    ${phases.map((p,i)=>`<div style="width:${widths[i]}%;background:${p.col};display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:9px;color:#fff;font-weight:700;">${e(p.n)}</span>
+    </div>`).join('')}
+    <div style="flex:1;background:#f0f0f0;"></div>
+  </div>
+  <div style="display:flex;padding:0 32px;gap:14px;margin-top:4px;">
+    ${phases.map((p,i)=>`<div style="flex:1;background:#fff;border-radius:8px;border:1px solid #eee;padding:14px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="width:28px;height:28px;background:${p.col};border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="color:#fff;font-size:12px;font-weight:900;">${i+1}</span>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:${t.dark};">${e(p.n)}</div>
+          <div style="font-size:10px;color:#888;">${e(p.dur)}</div>
+        </div>
+      </div>
+      <div style="font-size:20px;font-weight:900;color:${p.col};margin-bottom:6px;">${e(p.price)}</div>
+      <div style="font-size:10px;color:#666;line-height:1.5;border-top:1px solid #f0f0f0;padding-top:8px;">${e(p.scope)}</div>
+    </div>`).join('')}
+  </div>
+  <div style="margin:12px 32px 0;background:${t.light};border-radius:8px;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:12px;color:${t.dark};font-weight:600;">Total Programme Investment</span>
+    <span style="font-size:22px;font-weight:900;color:${t.primary};">${e(d.tot)}</span>
+    <span style="font-size:12px;color:#666;">Duration: <strong>${e(d.dur)}</strong></span>
+  </div>
+</div>`;
+}
+
+// ── Slide 10: Next Steps ──
+function slide_nextsteps(d, t){
+  const actions = [
+    {a:d.a1a, o:d.a1o, dt:d.a1d},
+    {a:d.a2a, o:d.a2o, dt:d.a2d},
+    {a:d.a3a, o:d.a3o, dt:d.a3d},
+    {a:d.a4a, o:d.a4o, dt:d.a4d}
+  ];
+  return `<div class="slide" style="background:#fff;font-family:'Inter',sans-serif;">
+  <div style="background:${t.dark};height:64px;display:flex;align-items:center;padding:0 40px;">
+    <span style="color:#fff;font-size:18px;font-weight:800;">Next Steps</span>
+  </div>
+  <div style="display:flex;padding:18px 32px 14px;gap:20px;">
+    <div style="flex:1.6;">
+      <div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Proposed Actions</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead>
+          <tr style="border-bottom:2px solid ${t.primary};">
+            <th style="padding:6px 8px;text-align:left;color:${t.dark};font-weight:800;width:32px;">#</th>
+            <th style="padding:6px 8px;text-align:left;color:${t.dark};font-weight:800;">Action</th>
+            <th style="padding:6px 8px;text-align:left;color:${t.dark};font-weight:800;">Owner</th>
+            <th style="padding:6px 8px;text-align:left;color:${t.dark};font-weight:800;">By</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${actions.map((a,i)=>`<tr style="border-bottom:1px solid #f0f0f0;background:${i%2===0?'#fff':'#fafafa'};">
+            <td style="padding:8px 8px;"><div style="width:22px;height:22px;background:${t.primary};border-radius:50%;display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-size:10px;font-weight:800;">${i+1}</span></div></td>
+            <td style="padding:8px 8px;color:#333;font-weight:600;">${e(a.a)}</td>
+            <td style="padding:8px 8px;color:#666;">${e(a.o)}</td>
+            <td style="padding:8px 8px;color:${t.primary};font-weight:700;white-space:nowrap;">${e(a.dt)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+      <div style="background:${t.primary};border-radius:10px;padding:20px;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Call to Action</div>
+        <div style="font-size:16px;font-weight:900;color:#fff;line-height:1.3;">${e(d.cta)}</div>
+      </div>
+      <div style="background:${t.light};border-radius:8px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:${t.dark};margin-bottom:4px;">${e(d.con)}</div>
+        <div style="font-size:11px;color:#666;">${e(d.email)}</div>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+// ══════════════════════════════════════════
+//  PREVIEW MANAGEMENT
+// ══════════════════════════════════════════
+function scaleSlide(){
+  const wrapper = document.getElementById('slideWrapper');
+  const container = document.getElementById('slideContainer');
+  const area = document.getElementById('previewArea');
+  const aw = area.clientWidth - 32;
+  const ah = area.clientHeight - 32 - 60; // minus nav
+  const scale = Math.min(aw / 960, ah / 540);
+  wrapper.style.transform = `scale(${scale})`;
+  container.style.width = Math.round(960 * scale) + 'px';
+  container.style.height = Math.round(540 * scale) + 'px';
+}
+
+function updatePreview(){
+  const data = getData();
+  const t = uploadedTheme || currentTheme;
+  const html = slideHTML(currentSlide, data, t);
+  document.getElementById('slide-preview').innerHTML = html;
+  document.getElementById('slideCtrEl').textContent = `${currentSlide+1} / 10`;
+  document.getElementById('slideNameEl').textContent = SLIDE_NAMES[currentSlide];
+  document.getElementById('btnPrev').disabled = currentSlide === 0;
+  document.getElementById('btnNext').disabled = currentSlide === 9;
+}
+
+function navigate(dir){
+  currentSlide = Math.max(0, Math.min(9, currentSlide + dir));
+  const tabs = document.querySelectorAll('.stab');
+  tabs.forEach((t,i)=>t.classList.toggle('active', i===currentSlide));
+  const panels = document.querySelectorAll('.form-panel');
+  panels.forEach((p,i)=>p.classList.toggle('active', i===currentSlide));
+  updatePreview();
+  document.getElementById('formPanels').scrollTop = 0;
+}
+
+function switchTab(i){
+  currentSlide = i;
+  const tabs = document.querySelectorAll('.stab');
+  tabs.forEach((t,j)=>t.classList.toggle('active', j===i));
+  const panels = document.querySelectorAll('.form-panel');
+  panels.forEach((p,j)=>p.classList.toggle('active', j===i));
+  updatePreview();
+}
+
+// ══════════════════════════════════════════
+//  THEME MANAGEMENT
+// ══════════════════════════════════════════
+function switchTheme(id){
+  currentTheme = THEMES[id] || THEMES.accenture;
+  uploadedTheme = null;
+  document.getElementById('tplInfo').classList.remove('show');
+  document.getElementById('tplUpload').value = '';
+  updatePreview();
+}
+
+function removeUploadedTemplate(){
+  uploadedTheme = null;
+  document.getElementById('tplInfo').classList.remove('show');
+  document.getElementById('tplUpload').value = '';
+  updatePreview();
+}
+
+// ══════════════════════════════════════════
+//  TEMPLATE UPLOAD (JSZip)
+// ══════════════════════════════════════════
+async function handleTemplateUpload(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  try {
+    const zip = await JSZip.loadAsync(file);
+    let colors = null;
+
+    // Try to read theme XML
+    const themeFiles = Object.keys(zip.files).filter(k => k.match(/ppt\/theme\/theme\d*\.xml/i));
+    if(themeFiles.length > 0){
+      const xml = await zip.files[themeFiles[0]].async('string');
+      colors = parseThemeColors(xml);
+    }
+
+    if(colors){
+      uploadedTheme = colors;
+      document.getElementById('tplInfoName').textContent = file.name.replace('.pptx','');
+      document.getElementById('tplInfo').classList.add('show');
+      updatePreview();
+    } else {
+      alert('Could not extract theme colors from this template. Using current theme.');
+    }
+  } catch(err){
+    alert('Error reading template file: ' + err.message);
+  }
+}
+
+function parseThemeColors(xml){
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  function getColor(tagName){
+    const els = doc.querySelectorAll(tagName);
+    for(const el of els){
+      const srgb = el.querySelector('srgbClr');
+      if(srgb) return '#' + srgb.getAttribute('val');
+      const sys = el.querySelector('sysClr');
+      if(sys) return '#' + (sys.getAttribute('lastClr') || '000000');
+    }
+    return null;
+  }
+  // Try both namespace-prefixed and unprefixed selectors
+  const accent1 = getColor('a\\:accent1, accent1') || '#4472C4';
+  const dk2 = getColor('a\\:dk2, dk2') || '#44546A';
+  const accent2 = getColor('a\\:accent2, accent2') || '#ED7D31';
+  const lt2 = getColor('a\\:lt2, lt2') || '#E7E6E6';
+
+  function toHex(c){ return c.replace('#',''); }
+  // Darken dk2 for dark backgrounds
+  const darkColor = dk2;
+
+  return {
+    name: 'Custom',
+    primary: accent1, primaryH: toHex(accent1),
+    dark: darkColor, darkH: toHex(darkColor),
+    accent: accent2, accentH: toHex(accent2),
+    secondary: accent1, secondaryH: toHex(accent1),
+    light: lt2 && lt2 !== '#ffffff' ? lt2 : '#f5f5f5',
+    textDark: darkColor, textGray: '#444',
+    gradStart: accent1, gradEnd: darkColor
+  };
+}
+
+// ══════════════════════════════════════════
+//  EXPORT TO PPTX
+// ══════════════════════════════════════════
+async function exportPPTX(){
+  const btn = document.querySelector('.btn-pptx');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  try {
+    const data = getData();
+    const t = uploadedTheme || currentTheme;
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE'; // 13.33 x 7.5 inches
+
+    const PW = 13.33, PH = 7.5;
+    const M = 0.4; // margin
+
+    function hdr(slide, title, sub){
+      // Header bar
+      slide.addShape('rect', { x:0, y:0, w:PW, h:0.85, fill:{color:t.darkH} });
+      // Accent line under header
+      slide.addShape('rect', { x:0, y:0.85, w:PW, h:0.07, fill:{color:t.primaryH} });
+      slide.addText(title, { x:M, y:0.1, w:PW-M*2, h:0.65, fontSize:20, bold:true, color:'FFFFFF', fontFace:'Calibri', valign:'middle' });
+      if(sub) slide.addText(sub, { x:M, y:0.62, w:PW-2, h:0.28, fontSize:10, color:'AAAAAA', fontFace:'Calibri' });
+    }
+
+    function footer(slide, num){
+      slide.addText(`${num} / 10`, { x:PW-1.5, y:PH-0.3, w:1.3, h:0.25, fontSize:9, color:'AAAAAA', align:'right', fontFace:'Calibri' });
+    }
+
+    // ── Slide 1: Cover ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.cover;
+      s.addShape('rect', { x:0, y:0, w:PW, h:PH, fill:{color:t.darkH} });
+      s.addShape('rect', { x:0, y:0, w:PW, h:0.07, fill:{color:t.accentH} });
+      s.addShape('rect', { x:0, y:PH-0.8, w:PW, h:0.8, fill:{color:'000000', transparency:55} });
+      // Corner decoration
+      s.addShape('rect', { x:PW-3, y:0, w:3, h:3, fill:{color:'FFFFFF', transparency:95}, rectRadius:0 });
+      s.addText(d.client.toUpperCase(), { x:M+0.2, y:1.2, w:9, h:0.4, fontSize:12, color:'AAAAAA', fontFace:'Calibri', charSpacing:3 });
+      s.addText(d.title, { x:M+0.2, y:1.7, w:10, h:1.8, fontSize:42, bold:true, color:'FFFFFF', fontFace:'Calibri', charSpacing:-1 });
+      s.addShape('rect', { x:M+0.2, y:3.6, w:0.7, h:0.07, fill:{color:t.accentH} });
+      s.addText(d.sub, { x:M+0.2, y:3.75, w:9, h:0.6, fontSize:15, color:'CCCCCC', fontFace:'Calibri' });
+      s.addText(d.by, { x:M, y:PH-0.65, w:5, h:0.45, fontSize:12, bold:true, color:'EEEEEE', fontFace:'Calibri' });
+      s.addText(d.date, { x:PW-2.5, y:PH-0.65, w:2.3, h:0.45, fontSize:12, color:'AAAAAA', align:'right', fontFace:'Calibri' });
+    })();
+
+    // ── Slide 2: Exec Summary ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.es;
+      hdr(s,'Executive Summary','Situation · Complication · Resolution');
+      const colW = (PW - M*2 - 0.3) / 3;
+      const colBorders = [t.primaryH, 'E53935', t.accentH];
+      const colLabels = ['SITUATION','COMPLICATION','RESOLUTION'];
+      const colTexts = [d.sit, d.comp, d.res];
+      colLabels.forEach((label, i)=>{
+        const cx = M + i*(colW+0.15);
+        s.addShape('rect', { x:cx, y:1.05, w:colW, h:0.07, fill:{color:colBorders[i]} });
+        s.addText(label, { x:cx, y:1.18, w:colW, h:0.3, fontSize:10, bold:true, color:colBorders[i], fontFace:'Calibri', charSpacing:1 });
+        s.addText(colTexts[i], { x:cx, y:1.52, w:colW, h:2.1, fontSize:10, color:'444444', fontFace:'Calibri', valign:'top' });
+      });
+      // Metrics
+      const metrics = [{v:d.m1v,l:d.m1l},{v:d.m2v,l:d.m2l},{v:d.m3v,l:d.m3l}];
+      metrics.forEach((m,i)=>{
+        const mx = M + i*(colW+0.15);
+        s.addShape('rect', { x:mx, y:3.75, w:colW, h:1.1, fill:{color:t.primaryH, transparency:88}, rectRadius:0.08 });
+        s.addText(m.v, { x:mx, y:3.82, w:colW, h:0.6, fontSize:28, bold:true, color:t.primaryH, align:'center', fontFace:'Calibri' });
+        s.addText(m.l, { x:mx, y:4.44, w:colW, h:0.3, fontSize:10, color:'666666', align:'center', fontFace:'Calibri' });
+      });
+      footer(s, 2);
+    })();
+
+    // ── Slide 3: Challenge ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.ch;
+      s.addShape('rect', { x:0, y:0, w:PW, h:1.0, fill:{color:t.darkH} });
+      s.addText('THE CHALLENGE', { x:M, y:0.08, w:12, h:0.3, fontSize:9, color:'AAAAAA', charSpacing:2, fontFace:'Calibri' });
+      s.addText(d.head, { x:M, y:0.38, w:12, h:0.52, fontSize:19, bold:true, color:'FFFFFF', fontFace:'Calibri' });
+      const colW = (PW - M*2 - 0.24) / 3;
+      const pains = [{t:d.p1t,d:d.p1d},{t:d.p2t,d:d.p2d},{t:d.p3t,d:d.p3d}];
+      pains.forEach((p,i)=>{
+        const cx = M + i*(colW+0.12);
+        s.addShape('rect', { x:cx, y:1.1, w:colW, h:3.4, fill:{color:'F8F8F8'}, rectRadius:0.08 });
+        s.addShape('rect', { x:cx, y:1.1, w:0.06, h:3.4, fill:{color:t.primaryH} });
+        s.addText(String(i+1), { x:cx+0.15, y:1.18, w:0.4, h:0.4, fontSize:14, bold:true, color:t.primaryH, fontFace:'Calibri' });
+        s.addText(p.t, { x:cx+0.15, y:1.65, w:colW-0.2, h:0.55, fontSize:13, bold:true, color:t.darkH, fontFace:'Calibri' });
+        s.addText(p.d, { x:cx+0.15, y:2.25, w:colW-0.2, h:2.1, fontSize:10, color:'555555', fontFace:'Calibri', valign:'top' });
+      });
+      s.addShape('rect', { x:M, y:4.65, w:PW-M*2, h:0.75, fill:{color:'FFF0F0'}, rectRadius:0.06 });
+      s.addShape('rect', { x:M, y:4.65, w:0.07, h:0.75, fill:{color:'E53935'} });
+      s.addText('⚠  ' + d.impact, { x:M+0.2, y:4.7, w:PW-M*2-0.3, h:0.65, fontSize:11, bold:true, color:'C62828', fontFace:'Calibri', valign:'middle' });
+      footer(s, 3);
+    })();
+
+    // ── Slide 4: Approach ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.ap;
+      hdr(s, d.title);
+      const phases = [{n:d.p1n,dur:d.p1d,desc:d.p1desc},{n:d.p2n,dur:d.p2d,desc:d.p2desc},{n:d.p3n,dur:d.p3d,desc:d.p3desc},{n:d.p4n,dur:d.p4d,desc:d.p4desc}];
+      const spacing = (PW - M*2 - 0.5) / 3;
+      const startX = M + 0.25;
+      // Timeline line
+      s.addShape('rect', { x:startX, y:2.55, w:PW-M*2-0.5, h:0.06, fill:{color:t.primaryH, transparency:70} });
+      phases.forEach((p, i)=>{
+        const cx = startX + i * spacing;
+        s.addShape('ellipse', { x:cx-0.22, y:2.35, w:0.44, h:0.44, fill:{color:t.primaryH} });
+        s.addText(String(i+1), { x:cx-0.22, y:2.35, w:0.44, h:0.44, fontSize:14, bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:'Calibri' });
+        s.addText(p.n, { x:cx-1, y:1.7, w:2, h:0.5, fontSize:13, bold:true, color:t.darkH, align:'center', fontFace:'Calibri' });
+        s.addShape('rect', { x:cx-0.9, y:2.25, w:1.8, h:0.06, fill:{color:t.primaryH, transparency:85} });
+        s.addText(p.dur, { x:cx-0.8, y:2.9, w:1.6, h:0.28, fontSize:9, bold:true, color:t.primaryH, align:'center', fontFace:'Calibri', charSpacing:0.5 });
+        s.addText(p.desc, { x:cx-1, y:3.22, w:2, h:1.8, fontSize:9, color:'555555', align:'center', fontFace:'Calibri', valign:'top' });
+      });
+      footer(s, 4);
+    })();
+
+    // ── Slide 5: Solution ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.sol;
+      s.addShape('rect', { x:0, y:0, w:PW, h:1.0, fill:{color:t.primaryH} });
+      s.addText('PROPOSED SOLUTION', { x:M, y:0.08, w:12, h:0.28, fontSize:9, color:'FFFFFF', transparency:40, charSpacing:2, fontFace:'Calibri' });
+      s.addText(d.name, { x:M, y:0.38, w:9, h:0.45, fontSize:18, bold:true, color:'FFFFFF', fontFace:'Calibri' });
+      s.addText(d.tag, { x:M, y:0.72, w:10, h:0.24, fontSize:11, color:'FFFFFF', transparency:40, italic:true, fontFace:'Calibri' });
+      const pillars = [{n:d.p1n,b:[d.p1b1,d.p1b2,d.p1b3]},{n:d.p2n,b:[d.p2b1,d.p2b2,d.p2b3]},{n:d.p3n,b:[d.p3b1,d.p3b2,d.p3b3]}];
+      const colW = (PW - M*2 - 0.24) / 3;
+      pillars.forEach((p,i)=>{
+        const cx = M + i*(colW+0.12);
+        s.addShape('rect', { x:cx, y:1.1, w:colW, h:3.85, fill:{color:'FFFFFF'}, rectRadius:0.08, shadow:{type:'outer', blur:8, offset:2, color:'000000', transparency:88} });
+        s.addShape('rect', { x:cx+0.12, y:1.2, w:0.4, h:0.4, fill:{color:t.primaryH}, rectRadius:0.06 });
+        s.addText(String(i+1), { x:cx+0.12, y:1.2, w:0.4, h:0.4, fontSize:14, bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:'Calibri' });
+        s.addText(p.n, { x:cx+0.12, y:1.7, w:colW-0.24, h:0.7, fontSize:12, bold:true, color:t.darkH, fontFace:'Calibri' });
+        s.addShape('rect', { x:cx+0.12, y:2.42, w:colW-0.24, h:0.03, fill:{color:'EEEEEE'} });
+        p.b.forEach((bul,j)=>{
+          s.addText('›  ' + bul, { x:cx+0.12, y:2.55+j*0.65, w:colW-0.24, h:0.6, fontSize:10, color:'555555', fontFace:'Calibri', valign:'top' });
+        });
+      });
+      footer(s, 5);
+    })();
+
+    // ── Slide 6: ROI ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.roi;
+      const cur = d.cur;
+      hdr(s, 'Business Case & Return on Investment');
+      const metrics = [
+        {v:`${cur}${d.inv}`,l:'Total Investment',c:'E53935'},
+        {v:`${cur}${d.y1}`,l:'Year 1 Benefits',c:t.accentH},
+        {v:`${cur}${d.y3}`,l:'Year 3 Benefits',c:t.primaryH},
+        {v:d.npv,l:'3-Year NPV',c:'2E7D32'},
+        {v:d.pct,l:'ROI',c:'F57C00'}
+      ];
+      const mw = (PW - M*2 - 0.32) / 5;
+      metrics.forEach((m,i)=>{
+        const mx = M + i*(mw+0.08);
+        s.addShape('rect', { x:mx, y:1.05, w:mw, h:0.05, fill:{color:m.c} });
+        s.addShape('rect', { x:mx, y:1.1, w:mw, h:1.1, fill:{color:t.primaryH, transparency:92}, rectRadius:0.06 });
+        s.addText(m.v, { x:mx, y:1.15, w:mw, h:0.65, fontSize:20, bold:true, color:m.c, align:'center', fontFace:'Calibri' });
+        s.addText(m.l, { x:mx, y:1.78, w:mw, h:0.3, fontSize:9, color:'666666', align:'center', fontFace:'Calibri' });
+      });
+      // Table
+      const rows = [
+        [
+          {text:'Item',options:{bold:true,color:'FFFFFF',fill:{color:t.darkH},border:{pt:0,color:t.darkH}}},
+          {text:'Year 1',options:{bold:true,color:'FFFFFF',fill:{color:t.darkH},align:'right',border:{pt:0,color:t.darkH}}},
+          {text:'Year 2',options:{bold:true,color:'FFFFFF',fill:{color:t.darkH},align:'right',border:{pt:0,color:t.darkH}}},
+          {text:'Year 3',options:{bold:true,color:'FFFFFF',fill:{color:t.darkH},align:'right',border:{pt:0,color:t.darkH}}}
+        ],
+        [
+          {text:'Total Investment',options:{bold:true,fill:{color:'FFFFFF'}}},
+          {text:`(${cur}${d.inv})`,options:{color:'E53935',align:'right',fill:{color:'FFFFFF'}}},
+          {text:'—',options:{color:'AAAAAA',align:'right',fill:{color:'FFFFFF'}}},
+          {text:'—',options:{color:'AAAAAA',align:'right',fill:{color:'FFFFFF'}}}
+        ],
+        [
+          {text:'Cumulative Benefits',options:{bold:true,fill:{color:'FAFAFA'}}},
+          {text:`${cur}${d.y1}`,options:{color:'2E7D32',bold:true,align:'right',fill:{color:'FAFAFA'}}},
+          {text:`${cur}${d.y2}`,options:{color:'2E7D32',bold:true,align:'right',fill:{color:'FAFAFA'}}},
+          {text:`${cur}${d.y3}`,options:{color:'2E7D32',bold:true,align:'right',fill:{color:'FAFAFA'}}}
+        ],
+        [
+          {text:'Net Position',options:{bold:true,fill:{color:t.primaryH, transparency:88}}},
+          {text:`Payback: ${d.pb}`,options:{color:t.primaryH,bold:true,align:'right',fill:{color:t.primaryH, transparency:88}}},
+          {text:`NPV: ${d.npv}`,options:{color:t.primaryH,bold:true,align:'right',fill:{color:t.primaryH, transparency:88}}},
+          {text:`ROI: ${d.pct}`,options:{color:t.primaryH,bold:true,align:'right',fill:{color:t.primaryH, transparency:88}}}
+        ]
+      ];
+      s.addTable(rows, { x:M, y:2.3, w:PW-M*2, fontSize:11, fontFace:'Calibri', rowH:0.52 });
+      s.addText('* ' + d.note, { x:M, y:5.05, w:PW-M*2, h:0.25, fontSize:9, color:'AAAAAA', italic:true, fontFace:'Calibri' });
+      footer(s, 6);
+    })();
+
+    // ── Slide 7: Why Us ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.why;
+      hdr(s, 'Why ' + d.co);
+      const diffs = [{t:d.d1t,d:d.d1d},{t:d.d2t,d:d.d2d},{t:d.d3t,d:d.d3d}];
+      const colW = (PW - M*2 - 0.24) / 3;
+      diffs.forEach((dd,i)=>{
+        const cx = M + i*(colW+0.12);
+        s.addShape('rect', { x:cx, y:1.05, w:colW, h:3.2, fill:{color:'FFFFFF'}, rectRadius:0.08, shadow:{type:'outer',blur:6,offset:2,color:'000000',transparency:90} });
+        s.addShape('ellipse', { x:cx+0.12, y:1.15, w:0.48, h:0.48, fill:{color:t.primaryH} });
+        s.addText('✓', { x:cx+0.12, y:1.15, w:0.48, h:0.48, fontSize:16, color:'FFFFFF', align:'center', valign:'middle', fontFace:'Calibri' });
+        s.addText(dd.t, { x:cx+0.12, y:1.73, w:colW-0.24, h:0.65, fontSize:12, bold:true, color:t.darkH, fontFace:'Calibri' });
+        s.addShape('rect', { x:cx+0.12, y:2.4, w:colW-0.24, h:0.03, fill:{color:'EEEEEE'} });
+        s.addText(dd.d, { x:cx+0.12, y:2.48, w:colW-0.24, h:1.7, fontSize:10, color:'555555', fontFace:'Calibri', valign:'top' });
+      });
+      // Credentials bar
+      s.addShape('rect', { x:M, y:4.4, w:PW-M*2, h:1.1, fill:{color:t.darkH}, rectRadius:0.08 });
+      const creds = [{v:d.yr,l:'Years Experience'},{v:d.cl,l:'Clients Served'},{v:d.pr,l:'Programmes Delivered'}];
+      creds.forEach((c,i)=>{
+        const cx = M + 0.5 + i * ((PW-M*2-1)/3);
+        s.addText(c.v, { x:cx, y:4.48, w:3, h:0.55, fontSize:28, bold:true, color:t.accentH, fontFace:'Calibri', align:'center' });
+        s.addText(c.l.toUpperCase(), { x:cx, y:5.02, w:3, h:0.3, fontSize:9, color:'AAAAAA', align:'center', charSpacing:0.5, fontFace:'Calibri' });
+      });
+      footer(s, 7);
+    })();
+
+    // ── Slide 8: Case Study ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.cs;
+      s.addShape('rect', { x:0, y:0, w:PW, h:0.85, fill:{color:t.darkH} });
+      s.addShape('rect', { x:0, y:0.85, w:PW, h:0.07, fill:{color:t.primaryH} });
+      s.addText('Client Success Story', { x:M, y:0.1, w:8, h:0.65, fontSize:20, bold:true, color:'FFFFFF', fontFace:'Calibri', valign:'middle' });
+      s.addShape('rect', { x:8.5, y:0.2, w:4.4, h:0.45, fill:{color:t.primaryH}, rectRadius:0.18 });
+      s.addText(d.tag, { x:8.5, y:0.2, w:4.4, h:0.45, fontSize:10, bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:'Calibri' });
+      // Left column
+      const lw = 7.5;
+      s.addText('THE CHALLENGE', { x:M, y:1.05, w:lw, h:0.28, fontSize:10, bold:true, color:t.primaryH, charSpacing:1, fontFace:'Calibri' });
+      s.addText(d.ch, { x:M, y:1.38, w:lw, h:1.6, fontSize:10, color:'444444', fontFace:'Calibri', valign:'top' });
+      s.addShape('rect', { x:M, y:3.05, w:lw, h:0.04, fill:{color:'EEEEEE'} });
+      s.addText('OUR APPROACH', { x:M, y:3.18, w:lw, h:0.28, fontSize:10, bold:true, color:t.accentH, charSpacing:1, fontFace:'Calibri' });
+      s.addText(d.ap, { x:M, y:3.5, w:lw, h:1.8, fontSize:10, color:'444444', fontFace:'Calibri', valign:'top' });
+      // Divider
+      s.addShape('rect', { x:8.1, y:1.0, w:0.04, h:5.2, fill:{color:'EEEEEE'} });
+      // Right column - results
+      s.addText('RESULTS DELIVERED', { x:8.3, y:1.05, w:4.7, h:0.28, fontSize:10, bold:true, color:'2E7D32', charSpacing:1, fontFace:'Calibri' });
+      const results = [{m:d.r1m,l:d.r1d},{m:d.r2m,l:d.r2d},{m:d.r3m,l:d.r3d}];
+      results.forEach((r,i)=>{
+        const ry = 1.42 + i * 1.6;
+        s.addShape('rect', { x:8.3, y:ry, w:4.7, h:1.45, fill:{color:t.primaryH, transparency:88}, rectRadius:0.08 });
+        s.addShape('rect', { x:8.3, y:ry, w:0.07, h:1.45, fill:{color:t.primaryH} });
+        s.addText(r.m, { x:8.45, y:ry+0.15, w:1.5, h:1.1, fontSize:28, bold:true, color:t.primaryH, fontFace:'Calibri', valign:'middle' });
+        s.addText(r.l, { x:9.95, y:ry+0.15, w:3, h:1.1, fontSize:11, bold:true, color:'444444', fontFace:'Calibri', valign:'middle' });
+      });
+      footer(s, 8);
+    })();
+
+    // ── Slide 9: Timeline ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.tl;
+      hdr(s, 'Investment & Delivery Timeline');
+      const phases = [
+        {n:d.p1n,dur:d.p1d,price:d.p1p,scope:d.p1s,c:t.accentH,w:0.2},
+        {n:d.p2n,dur:d.p2d,price:d.p2p,scope:d.p2s,c:t.primaryH,w:0.32},
+        {n:d.p3n,dur:d.p3d,price:d.p3p,scope:d.p3s,c:t.secondaryH,w:0.48}
+      ];
+      // Phase bar
+      const barW = PW - M*2;
+      let barX = M;
+      phases.forEach(p=>{
+        const pw = barW * p.w;
+        s.addShape('rect', { x:barX, y:1.05, w:pw, h:0.22, fill:{color:p.c} });
+        barX += pw;
+      });
+      s.addShape('rect', { x:barX, y:1.05, w:barW*(1-phases.reduce((a,p)=>a+p.w,0)), h:0.22, fill:{color:'EEEEEE'} });
+      const colW = (PW - M*2 - 0.24) / 3;
+      phases.forEach((p,i)=>{
+        const cx = M + i*(colW+0.12);
+        s.addShape('rect', { x:cx, y:1.38, w:colW, h:3.55, fill:{color:'FFFFFF'}, rectRadius:0.08, shadow:{type:'outer',blur:6,offset:2,color:'000000',transparency:90} });
+        s.addShape('rect', { x:cx+0.12, y:1.48, w:0.38, h:0.38, fill:{color:p.c}, rectRadius:0.06 });
+        s.addText(String(i+1), { x:cx+0.12, y:1.48, w:0.38, h:0.38, fontSize:13, bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:'Calibri' });
+        s.addText(p.n, { x:cx+0.62, y:1.5, w:colW-0.74, h:0.35, fontSize:13, bold:true, color:t.darkH, fontFace:'Calibri' });
+        s.addText(p.dur, { x:cx+0.62, y:1.82, w:colW-0.74, h:0.24, fontSize:9, color:'888888', fontFace:'Calibri' });
+        s.addText(p.price, { x:cx+0.12, y:2.15, w:colW-0.24, h:0.55, fontSize:22, bold:true, color:p.c, fontFace:'Calibri' });
+        s.addShape('rect', { x:cx+0.12, y:2.72, w:colW-0.24, h:0.03, fill:{color:'EEEEEE'} });
+        s.addText(p.scope, { x:cx+0.12, y:2.8, w:colW-0.24, h:2.0, fontSize:9, color:'555555', fontFace:'Calibri', valign:'top' });
+      });
+      // Total bar
+      s.addShape('rect', { x:M, y:5.08, w:PW-M*2, h:0.78, fill:{color:t.primaryH, transparency:88}, rectRadius:0.06 });
+      s.addText('Total Programme Investment', { x:M+0.2, y:5.14, w:5, h:0.65, fontSize:12, bold:true, color:t.darkH, fontFace:'Calibri', valign:'middle' });
+      s.addText(d.tot, { x:5.5, y:5.14, w:3.5, h:0.65, fontSize:22, bold:true, color:t.primaryH, align:'center', fontFace:'Calibri', valign:'middle' });
+      s.addText('Duration: ' + d.dur, { x:9.5, y:5.14, w:3.4, h:0.65, fontSize:12, color:'555555', align:'right', fontFace:'Calibri', valign:'middle' });
+      footer(s, 9);
+    })();
+
+    // ── Slide 10: Next Steps ──
+    (()=>{
+      const s = pptx.addSlide();
+      const d = data.ns;
+      hdr(s, 'Next Steps');
+      const actions = [{a:d.a1a,o:d.a1o,dt:d.a1d},{a:d.a2a,o:d.a2o,dt:d.a2d},{a:d.a3a,o:d.a3o,dt:d.a3d},{a:d.a4a,o:d.a4o,dt:d.a4d}];
+      const rows = [
+        [
+          {text:'#',options:{bold:true,color:'FFFFFF',fill:{color:t.darkH},align:'center',border:{pt:0,color:t.darkH}}},
+          {text:'Action',options:{bold:true,color:'FFFFFF',fill:{color:t.darkH},border:{pt:0,color:t.darkH}}},
+          {text:'Owner',options:{bold:true,color:'FFFFFF',fill:{color:t.darkH},border:{pt:0,color:t.darkH}}},
+          {text:'By',options:{bold:true,color:'FFFFFF',fill:{color:t.darkH},border:{pt:0,color:t.darkH}}}
+        ],
+        ...actions.map((a,i)=>[
+          {text:String(i+1),options:{bold:true,color:t.primaryH,align:'center',fill:{color:i%2===0?'FFFFFF':'FAFAFA'}}},
+          {text:a.a,options:{bold:true,fill:{color:i%2===0?'FFFFFF':'FAFAFA'}}},
+          {text:a.o,options:{color:'555555',fill:{color:i%2===0?'FFFFFF':'FAFAFA'}}},
+          {text:a.dt,options:{bold:true,color:t.primaryH,fill:{color:i%2===0?'FFFFFF':'FAFAFA'}}}
+        ])
+      ];
+      s.addTable(rows, { x:M, y:1.05, w:8.5, fontSize:11, fontFace:'Calibri', rowH:0.62 });
+      // CTA box
+      s.addShape('rect', { x:9.2, y:1.05, w:3.7, h:2.55, fill:{color:t.primaryH}, rectRadius:0.1 });
+      s.addText('CALL TO ACTION', { x:9.35, y:1.2, w:3.4, h:0.3, fontSize:9, color:'FFFFFF', transparency:45, align:'center', charSpacing:1.5, fontFace:'Calibri' });
+      s.addText(d.cta, { x:9.35, y:1.55, w:3.4, h:1.4, fontSize:15, bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:'Calibri' });
+      // Contact
+      s.addShape('rect', { x:9.2, y:3.75, w:3.7, h:1.1, fill:{color:t.primaryH, transparency:88}, rectRadius:0.08 });
+      s.addText(d.con, { x:9.35, y:3.85, w:3.4, h:0.38, fontSize:12, bold:true, color:t.darkH, fontFace:'Calibri' });
+      s.addText(d.email, { x:9.35, y:4.2, w:3.4, h:0.55, fontSize:10, color:'555555', fontFace:'Calibri' });
+      footer(s, 10);
+    })();
+
+    const fileName = (data.cover.client || 'Pitch Deck').replace(/[^a-z0-9]/gi,'_') + '_PitchDeck.pptx';
+    await pptx.writeFile({ fileName });
+  } catch(err){
+    alert('Export failed: ' + err.message);
+    console.error(err);
+  } finally {
+    btn.textContent = '⬇ Export PPTX';
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════
+//  PRINT PDF
+// ══════════════════════════════════════════
+function printPDF(){
+  const data = getData();
+  const t = uploadedTheme || currentTheme;
+  const container = document.getElementById('print-all-slides');
+  container.innerHTML = '';
+  for(let i=0;i<10;i++){
+    const div = document.createElement('div');
+    div.innerHTML = slideHTML(i, data, t);
+    container.appendChild(div);
+  }
+  window.print();
+  setTimeout(()=>{ container.innerHTML=''; }, 2000);
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init(){
+  // Attach live update listeners to all inputs/textareas
+  document.querySelectorAll('#formPanels input, #formPanels textarea').forEach(el=>{
+    el.addEventListener('input', updatePreview);
+  });
+
+  // Scale on resize
+  window.addEventListener('resize', ()=>{ scaleSlide(); });
+
+  scaleSlide();
+  updatePreview();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
